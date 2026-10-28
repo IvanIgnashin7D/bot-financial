@@ -2,14 +2,13 @@ import io
 from datetime import datetime
 
 from openai import AsyncOpenAI
-
-from source.structures.structures import Answer
+from structures.structures import Answer
 
 client = AsyncOpenAI(api_key="ВАШ_OPENAI_API_KEY")
 
 
 async def text_response(text: str) -> Answer:
-    today = datetime.date.today().isoformat()
+    today = datetime.now().isoformat()
 
     system_prompt = f"""
     Ты финансовый ассистент. Твоя задача — извлечь из текста пользователя все траты и структурировать их.
