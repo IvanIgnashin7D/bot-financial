@@ -1,19 +1,27 @@
-async def text_response(text: str) -> str:
-    """
-    Формирует текстовый ответ для пользователя.
-    """
-    return text
+import io
+
+from source.structures.structures import Answer
 
 
-async def audio_response(audio_path: str) -> str:
+async def text_response(text: str) -> Answer:
     """
-    Формирует аудио ответ для пользователя.
+    Формирует трату из текста
     """
-    return audio_path
+    answer = Answer()
+    return answer
 
 
-async def photo_response(photo_path: str) -> str:
+async def voice_response(audio_buffer: io.BytesIO) -> Answer:
     """
-    Формирует фото ответ для пользователя.
+    Формирует трату из голосового сообщения.
     """
-    return photo_path
+    answer = Answer()
+    return answer
+
+
+async def photo_response(photo_buffer: io.BytesIO) -> Answer:
+    """
+    Формирует трату из фотографии.
+    """
+    answer = Answer()
+    return answer

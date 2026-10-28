@@ -1,4 +1,6 @@
-from aiogram import F, Router
+import io
+
+from aiogram import Bot, F, Router
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 from business import business
@@ -18,13 +20,23 @@ async def text_handler(message: Message):
     await message.send_copy(chat_id=message.chat.id)
 
 
-@router.message(F.audio)
-async def audio_handler(message: Message):
-    await business.audio_response(message.audio.file_id)
-    await message.send_copy(chat_id=message.chat.id)
+@router.message(F.voice)
+async def voice_handler(message: Message, bot: Bot):
+    file_buffer = io.BytesIO()
+    await bot.download(message.voice, file_buffer)
+    file_buffer.seek(0)
+
+    answer = await business.voice_response(file_buffer)
+    # TODO: сделать преобразование ответа в текст и отправку пользователю
+    await message.answer(chat_id=message.chat.id, text=answer)
 
 
 @router.message(F.photo)
-async def photo_handler(message: Message):
-    await business.photo_response(message.photo[-1].file_id)
-    await message.send_copy(chat_id=message.chat.id)
+async def photo_handler(message: Message, bot: Bot):
+    file_buffer = io.BytesIO()
+    await bot.download(message.photo[-1], file_buffer)
+    file_buffer.seek(0)
+
+    answer = await business.photo_response(file_buffer)
+    # TODO: сделать преобразование ответа в текст и отправку пользователю
+    await message.send_copy(chat_id=message.chat.id, text=answer)
