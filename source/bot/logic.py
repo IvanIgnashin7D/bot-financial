@@ -15,4 +15,21 @@ def answer_to_text(answer: Answer) -> str:
             line += f" ({trata.shop})"
         lines.append(line)
 
+    lines = []
+    shop = None
+    for trata in answer.content:
+        line = ""
+
+        if trata.shop != shop:
+            shop = trata.shop
+            line += f"\n🧾 <b>Чек из магазина «{shop if shop else 'Не указан'}»</b>\n"
+
+        line += (
+            f"🛒 <b>{trata.name}</b>\n"
+            f"├ Цена: {trata.amount} ₽\n"
+            f"├ Категория: {trata.category.value}\n"
+            f"└ Дата: {trata.date.strftime('%d.%m.%Y')}\n"
+        )
+        lines.append(line)
+
     return "\n".join(lines)
