@@ -5,10 +5,6 @@ from pydantic import BaseModel, Field
 
 
 class Category(str, Enum):
-    """
-    Категории трат.
-    """
-
     FOOD = "Еда"
     TRANSPORT = "Транспорт"
     ENTERTAINMENT = "Развлечения"
@@ -20,15 +16,15 @@ class Category(str, Enum):
 
 
 class Trata(BaseModel):
-    amount: float
-    category: Category = Category.OTHER
-    date: datetime = Field(default_factory=datetime.now)
-    shop: str | None = None
+    name: str = Field(description="Название траты")
+    amount: float = Field(description="Сумма траты в рублях")
+    category: Category = Field(default=Category.OTHER, description="Категория траты")
+    date: datetime = Field(
+        default_factory=datetime.now,
+        description="Дата и время траты в формате YYYY-MM-DD HH:MM",
+    )
+    shop: str | None = Field(default=None, description="Название магазина")
 
 
 class Answer(BaseModel):
-    """
-    Класс для хранения ответа на запрос.
-    """
-
-    content: list[Trata] = Field(default_factory=list)
+    content: list[Trata] = Field(default_factory=list, description="Список трат")
