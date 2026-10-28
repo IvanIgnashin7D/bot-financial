@@ -1,10 +1,17 @@
 import io
 from datetime import datetime
+from os import getenv
 
+from dotenv import load_dotenv
 from openai import AsyncOpenAI
 from structures.structures import Answer
 
-client = AsyncOpenAI(api_key="ВАШ_OPENAI_API_KEY")
+load_dotenv()
+MODEL_API_KEY = getenv("MODEL_API_KEY")
+client = AsyncOpenAI(
+    api_key=MODEL_API_KEY,
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+)
 
 
 async def text_response(text: str) -> Answer:
@@ -19,7 +26,7 @@ async def text_response(text: str) -> Answer:
     """
 
     completion = await client.beta.chat.completions.parse(
-        model="gpt-4o-mini",
+        model="gemini-3.5-flash-lite",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": text},

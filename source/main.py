@@ -1,7 +1,7 @@
 import asyncio
 import logging
-import os
 import sys
+from os import getenv
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -10,8 +10,8 @@ from bot.handlers import router
 from dotenv import load_dotenv
 
 load_dotenv()
-
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+MODEL_API_KEY = getenv("MODEL_API_KEY")
+BOT_TOKEN = getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     sys.exit("Ошибка: переменная BOT_TOKEN не найдена в файле .env")
 
