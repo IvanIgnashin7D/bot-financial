@@ -1,20 +1,30 @@
-from aiogram import Router
-from aiogram.filters import Command, CommandStart
+from aiogram import F, Router
+from aiogram.filters import CommandStart
 from aiogram.types import Message
+from business import business
+from texts import abc
 
 router = Router()
 
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
-    await message.answer(f"Привет, {message.from_user.first_name}!")
+    await message.answer(abc.start_message, parse_mode="HTML")
 
 
-@router.message(Command("help"))
-async def cmd_help(message: Message):
-    await message.answer("Это эхо-бот. Напиши мне что-нибудь, и я отвечу тем же.")
+@router.message(F.text)
+async def text_handler(message: Message):
+    await business.text_response(message.text)
+    await message.send_copy(chat_id=message.chat.id)
 
 
-@router.message()
-async def echo_handler(message: Message):
+@router.message(F.audio)
+async def audio_handler(message: Message):
+    await business.audio_response(message.audio.file_id)
+    await message.send_copy(chat_id=message.chat.id)
+
+
+@router.message(F.photo)
+async def photo_handler(message: Message):
+    await business.photo_response(message.photo[-1].file_id)
     await message.send_copy(chat_id=message.chat.id)
