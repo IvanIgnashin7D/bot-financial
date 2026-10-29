@@ -9,7 +9,11 @@ from google.genai import types
 from structures.structures import Answer
 
 load_dotenv()
+
 MODEL_API_KEY = getenv("MODEL_API_KEY")
+MODEL = "gemini-3.5-flash"
+APPLICATION_JSON = "application/json"
+
 client = genai.Client(api_key=MODEL_API_KEY)
 
 
@@ -27,11 +31,11 @@ def get_system_prompt() -> str:
 @retry_on_server_error()
 async def text_response(text: str) -> Answer:
     response = await client.aio.models.generate_content(
-        model="gemini-3.5-flash",
+        model=MODEL,
         contents=text,
         config=types.GenerateContentConfig(
             system_instruction=get_system_prompt(),
-            response_mime_type="application/json",
+            response_mime_type=APPLICATION_JSON,
             response_schema=Answer,
             temperature=0.1,
         ),
@@ -49,11 +53,11 @@ async def voice_response(audio_buffer: io.BytesIO) -> Answer:
     )
 
     response = await client.aio.models.generate_content(
-        model="gemini-3.5-flash",
+        model=MODEL,
         contents=audio_part,
         config=types.GenerateContentConfig(
             system_instruction=get_system_prompt(),
-            response_mime_type="application/json",
+            response_mime_type=APPLICATION_JSON,
             response_schema=Answer,
             temperature=0.1,
         ),
@@ -72,11 +76,11 @@ async def photo_response(photo_buffer: io.BytesIO) -> Answer:
     )
 
     response = await client.aio.models.generate_content(
-        model="gemini-3.5-flash",
+        model=MODEL,
         contents=image_part,
         config=types.GenerateContentConfig(
             system_instruction=get_system_prompt(),
-            response_mime_type="application/json",
+            response_mime_type=APPLICATION_JSON,
             response_schema=Answer,
             temperature=0.1,
         ),
