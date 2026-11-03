@@ -1,7 +1,7 @@
 import io
 
-from aiogram import Bot, ExceptionTypeFilter, F, Router
-from aiogram.filters import CommandStart
+from aiogram import Bot, F, Router
+from aiogram.filters import CommandStart, ExceptionTypeFilter
 from aiogram.types import ErrorEvent, Message
 from bot import logic
 from business import business
