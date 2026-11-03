@@ -5,6 +5,7 @@ import dotenv
 from db.models import Payment, User
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from structures.structures import Trata
 
 dotenv.load_dotenv()
 DB_URL = os.getenv("DATABASE_URL")
@@ -42,11 +43,19 @@ async def get_user(telegram_id: int) -> User | None:
         return result.scalar_one_or_none()
 
 
-async def save_payments(payments: list[Payment]) -> bool:
+async def save_payments(tratas: list[Trata]) -> bool:
     try:
         async with async_session() as session:
-            for payment in payments:
-                session.add(payment)
+            for trata in tratas:
+                session.add(
+                    Payment(
+                        name=trata.name,
+                        amount=trata.amount,
+                        category=trata.category,
+                        date=trata.date,
+                        shop=trata.shop,
+                    )
+                )
         await session.commit()
         return True
     except Exception:

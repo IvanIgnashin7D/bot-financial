@@ -6,7 +6,7 @@ from business.decorators import retry_on_server_error
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from structures.structures import Answer
+from structures.structures import Answer, Category, Trata
 
 load_dotenv()
 
@@ -34,13 +34,14 @@ async def text_response(text: str) -> Answer:
     if USE_MOCK:
         # Mock response for testing
         return Answer(
-            payments=[
-                {
-                    "amount": 100.0,
-                    "category": "еда",
-                    "store": "магазин",
-                    "date": datetime.now().date(),
-                }
+            сontent=[
+                Trata(
+                    name="Тестовая трата",
+                    amount=100.0,
+                    category=Category.OTHER,
+                    date=datetime.now(),
+                    shop="Тестовый магазин",
+                )
             ]
         )
 
