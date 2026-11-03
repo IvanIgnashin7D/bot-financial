@@ -63,16 +63,18 @@ async def delete_last_payment_handler(message: Message):
 async def clear_payments_handler(message: Message, state: FSMContext):
     await message.answer(
         "Данная функция удалит <b>ВСЕ</b> ваши траты. Вы уверены?",
-        reply_markup=get_confirm_kb(),
+        reply_markup=get_confirm_kb(
+            callback_data1="confirm_clear", callback_data2="cancel_clear"
+        ),
         parse_mode="HTML",
     )
     await state.set_state(ClearPaymentsState.confirm_clear)
 
 
-@router.callback_query(ClearPaymentsState.confirm_clear, F.data == "confirm_payment")
+@router.callback_query(ClearPaymentsState.confirm_clear, F.data == "confirm_clear")
 async def confirm_clear_handler(callback: CallbackQuery, state: FSMContext):
     await state.clear()
-    deleted = await delete_all_payments(telegram_id=callback.from_user.id)
+    deleted = await delete_all_payments(tg_id=callback.from_user.id)
     if deleted:
         await callback.message.edit_text("✅ Все траты успешно удалены.")
     else:
@@ -80,7 +82,7 @@ async def confirm_clear_handler(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-@router.callback_query(ClearPaymentsState.confirm_clear, F.data == "cancel_payment")
+@router.callback_query(ClearPaymentsState.confirm_clear, F.data == "cancel_clear")
 async def cancel_clear_handler(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await callback.message.edit_text("❌ Очистка трат отменена.")
@@ -107,7 +109,11 @@ async def text_handler(message: Message, state: FSMContext):
 
     text_preview = f"📝 <b>Проверьте данные:</b>\n\n{answer_text}"
     await current_message.edit_text(
-        text_preview, reply_markup=get_confirm_kb(), parse_mode="HTML"
+        text_preview,
+        reply_markup=get_confirm_kb(
+            callback_data1="confirm_payment", callback_data2="cancel_payment"
+        ),
+        parse_mode="HTML",
     )
 
 
@@ -125,13 +131,18 @@ async def confirm_payment_handler(callback: CallbackQuery, state: FSMContext):
         return
 
     result = await save_payments(answer=answer, tg_id=callback.from_user.id)
-    print(result)
+
+    if result:
+        await callback.message.edit_text(
+            f"✅ Расход успешно записан в базу данных!\n\n{answer_text}",
+            parse_mode="HTML",
+        )
+    else:
+        await callback.message.edit_text(
+            "❌ Произошла ошибка при сохранении данных. Пожалуйста, попробуйте снова."
+        )
 
     await state.clear()
-
-    await callback.message.edit_text(
-        f"✅ Расход успешно записан в базу данных!\n\n{answer_text}", parse_mode="HTML"
-    )
     await callback.answer()
 
 

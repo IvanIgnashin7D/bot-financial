@@ -38,7 +38,7 @@ async def text_response(text: str) -> Answer:
             content=[
                 Trata(
                     name="Тестовая трата",
-                    amount=100.0,
+                    amount=100.5,
                     category=Category.OTHER,
                     date=datetime.now(),
                     shop="Тестовый магазин",

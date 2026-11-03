@@ -11,7 +11,7 @@ dotenv.load_dotenv()
 DB_URL = os.getenv("DATABASE_URL")
 
 engine = create_async_engine(DB_URL, echo=False)
-async_session = async_sessionmaker(engine, expire_on_commit=False)
+async_session = async_sessionmaker(engine, expire_on_commit=True)
 
 
 async def create_new_user(
@@ -57,7 +57,7 @@ async def save_payments(answer: Answer, tg_id: int) -> bool:
                         shop=trata.shop,
                     )
                 )
-        await session.commit()
+            await session.commit()
         return True
     except Exception as e:
         print(f"Error saving payments: {e}")
@@ -70,18 +70,17 @@ async def delete_last_payment(tg_id: int) -> bool:
             stmt = (
                 select(Payment)
                 .where(Payment.tg_id == tg_id)
-                .order_by(Payment.date.desc())
+                .order_by(Payment.date.desc(), Payment.id.desc())
+                .limit(1)
             )
             result = await session.execute(stmt)
             last_payment = result.scalars().first()
 
             if last_payment:
-                print("FOUND")
                 await session.delete(last_payment)
                 await session.commit()
                 return True
             else:
-                print("NOT FOUND")
                 return False
     except Exception as e:
         print(f"EXCEPTION: {e}")
@@ -102,5 +101,6 @@ async def delete_all_payments(tg_id: int) -> bool:
                 return True
             else:
                 return False
-    except Exception:
+    except Exception as e:
+        print(e)
         return False

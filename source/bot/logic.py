@@ -9,13 +9,6 @@ def answer_to_text(answer: Answer) -> str:
         return "Нет данных для отображения."
 
     lines = []
-    for trata in answer.content:
-        line = f"<b>{trata.name}</b>: {trata.amount} руб, <i>{trata.category.value}</i>, {trata.date.strftime('%d.%m.%Y')}"
-        if trata.shop:
-            line += f" ({trata.shop})"
-        lines.append(line)
-
-    lines = []
     shop = None
     for trata in answer.content:
         line = ""
