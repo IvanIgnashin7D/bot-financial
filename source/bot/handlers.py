@@ -5,13 +5,12 @@ from aiogram.filters import Command, CommandStart, ExceptionTypeFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, ErrorEvent, Message
 from bot import logic
+from bot.keyboards import get_confirm_kb
 from bot.states import PaymentState
 from business.business import photo_response, text_response, voice_response
 from db.business import create_new_user
 from google.genai.errors import ServerError
 from texts import abc
-
-from source.bot.keyboards import get_confirm_kb
 
 router = Router()
 
@@ -40,6 +39,8 @@ async def cmd_help(message: Message):
 
 @router.message(F.text)
 async def text_handler(message: Message, state: FSMContext):
+    current_message = await message.answer("⏳ Обрабатываю ваш запрос...")
+
     answer = await text_response(message.text)
     answer_text = logic.answer_to_text(answer)
 
@@ -47,7 +48,10 @@ async def text_handler(message: Message, state: FSMContext):
     await state.set_state(PaymentState.confirm_payment)
 
     text_preview = f"📝 <b>Проверьте данные:</b>\n\n{answer_text}"
-    await message.answer(text_preview, reply_markup=get_confirm_kb(), parse_mode="HTML")
+    await current_message.edit_text(
+        text_preview, reply_markup=get_confirm_kb(), parse_mode="HTML"
+    )
+    # await message.answer(text_preview, reply_markup=get_confirm_kb(), parse_mode="HTML")
 
 
 @router.callback_query(PaymentState.confirm_payment, F.data == "confirm_payment")

@@ -6,6 +6,7 @@ help:
 	@echo "  make down         - Остановить все контейнеры"
 	@echo "  make build        - Пересобрать образы и запустить проект"
 	@echo "  make restart      - Перезапустить контейнеры"
+	@echo "  make status       - Проверить статус контейнеров"
 	@echo "  make logs         - Смотреть логи всех сервисов в реальном времени"
 	@echo "  make logs-bot     - Смотреть логи только бота"
 	@echo "  make migrate      - Сгенерировать и применить миграцию (make migrate m=\"init\")"
@@ -24,7 +25,9 @@ build:
 
 restart: down build
 
-# Просмотр логов
+status:
+	docker compose ps
+
 logs:
 	docker compose logs -f
 
