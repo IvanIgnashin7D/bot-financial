@@ -13,6 +13,7 @@ load_dotenv()
 MODEL_API_KEY = getenv("MODEL_API_KEY")
 MODEL = "gemini-3.5-flash"
 APPLICATION_JSON = "application/json"
+USE_MOCK = getenv("USE_MOCK_AI", "False").lower() in ("true", "1")
 
 client = genai.Client(api_key=MODEL_API_KEY)
 
@@ -30,6 +31,19 @@ def get_system_prompt() -> str:
 
 @retry_on_server_error()
 async def text_response(text: str) -> Answer:
+    if USE_MOCK:
+        # Mock response for testing
+        return Answer(
+            payments=[
+                {
+                    "amount": 100.0,
+                    "category": "еда",
+                    "store": "магазин",
+                    "date": datetime.now().date(),
+                }
+            ]
+        )
+
     response = await client.aio.models.generate_content(
         model=MODEL,
         contents=text,

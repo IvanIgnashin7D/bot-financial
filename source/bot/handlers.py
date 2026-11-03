@@ -8,7 +8,12 @@ from bot import logic
 from bot.keyboards import get_confirm_kb
 from bot.states import ClearPaymentsState, PaymentState
 from business.business import photo_response, text_response, voice_response
-from db.business import create_new_user, delete_last_payment, save_payments
+from db.business import (
+    create_new_user,
+    delete_all_payments,
+    delete_last_payment,
+    save_payments,
+)
 from google.genai.errors import ServerError
 from texts import abc
 
@@ -35,6 +40,60 @@ async def cmd_start(message: Message):
 @router.message(Command("help"))
 async def cmd_help(message: Message):
     await message.answer(abc.help_message, parse_mode="HTML")
+
+
+@router.message(Command("stats"))
+async def stats_handler(message: Message):
+    await message.answer(
+        "ℹ️ Функция статистики пока в разработке. Пожалуйста, подождите."
+    )
+    # TODO: dodelat
+
+
+@router.message(Command("delete_last_payment"))
+async def delete_last_payment_handler(message: Message):
+    deleted = await delete_last_payment(telegram_id=message.from_user.id)
+    if deleted:
+        await message.answer("✅ Последняя трата успешно удалена.")
+    else:
+        await message.answer("❌ Не удалось удалить последнюю трату.")
+
+
+@router.message(Command("clear"))
+async def clear_payments_handler(message: Message, state: FSMContext):
+    await message.answer(
+        "Данная функция удалит <b>ВСЕ</b> ваши траты. Вы уверены?",
+        reply_markup=get_confirm_kb(),
+        parse_mode="HTML",
+    )
+    await state.set_state(ClearPaymentsState.confirm_clear)
+
+
+@router.callback_query(ClearPaymentsState.confirm_clear, F.data == "confirm_payment")
+async def confirm_clear_handler(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    deleted = await delete_all_payments(telegram_id=callback.from_user.id)
+    if deleted:
+        await callback.message.edit_text("✅ Все траты успешно удалены.")
+    else:
+        await callback.message.edit_text("❌ Не удалось удалить траты.")
+    await callback.answer()
+
+
+@router.callback_query(ClearPaymentsState.confirm_clear, F.data == "cancel_payment")
+async def cancel_clear_handler(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.message.edit_text("❌ Очистка трат отменена.")
+    await callback.answer()
+
+
+@router.error(ExceptionTypeFilter(ServerError))
+async def handle_gemini_server_error(event: ErrorEvent, retries=3):
+    if event.update.message:
+        for _ in range(retries):
+            await event.update.message.answer(
+                "⚠️ Нейросеть сейчас перегружена запросами. Повторная попытка..."
+            )
 
 
 @router.message(F.text)
@@ -101,54 +160,3 @@ async def photo_handler(message: Message, bot: Bot):
     answer = await photo_response(file_buffer)
     answer_text = logic.answer_to_text(answer)
     await message.answer(text=answer_text, parse_mode="HTML")
-
-
-@router.message(Command("stats"))
-async def stats_handler(message: Message):
-    await message.answer(
-        "ℹ️ Функция статистики пока в разработке. Пожалуйста, подождите."
-    )
-    # TODO: dodelat
-
-
-@router.message(Command("delete_last_payment"))
-async def delete_last_payment_handler(message: Message):
-    deleted = await delete_last_payment(telegram_id=message.from_user.id)
-    if deleted:
-        await message.answer("✅ Последняя трата успешно удалена.")
-    else:
-        await message.answer("❌ Не удалось удалить последнюю трату.")
-
-
-@router.message(Command("clear"))
-async def clear_payments_handler(message: Message, state: FSMContext):
-    await message.answer(
-        "Данная функция удалит <b>ВСЕ</b> ваши траты. Вы уверены?",
-        reply_markup=get_confirm_kb(),
-        parse_mode="HTML",
-    )
-    await state.set_state(ClearPaymentsState.confirm_clear)
-
-
-@router.callback_query(ClearPaymentsState.confirm_clear, F.data == "confirm_payment")
-async def confirm_clear_handler(callback: CallbackQuery, state: FSMContext):
-    await state.clear()
-    # TODO: функция удаления из бд всех трат
-    await callback.message.edit_text("✅ Все траты успешно удалены.")
-    await callback.answer()
-
-
-@router.callback_query(ClearPaymentsState.confirm_clear, F.data == "cancel_payment")
-async def cancel_clear_handler(callback: CallbackQuery, state: FSMContext):
-    await state.clear()
-    await callback.message.edit_text("❌ Очистка трат отменена.")
-    await callback.answer()
-
-
-@router.error(ExceptionTypeFilter(ServerError))
-async def handle_gemini_server_error(event: ErrorEvent, retries=3):
-    if event.update.message:
-        for _ in range(retries):
-            await event.update.message.answer(
-                "⚠️ Нейросеть сейчас перегружена запросами. Повторная попытка..."
-            )

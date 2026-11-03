@@ -72,3 +72,21 @@ async def delete_last_payment(telegram_id: int) -> bool:
                 return False
     except Exception:
         return False
+
+
+async def delete_all_payments(telegram_id: int) -> bool:
+    try:
+        async with async_session() as session:
+            stmt = select(Payment).where(Payment.telegram_id == telegram_id)
+            result = await session.execute(stmt)
+            payments_to_delete = result.scalars().all()
+
+            if payments_to_delete:
+                for payment in payments_to_delete:
+                    await session.delete(payment)
+                await session.commit()
+                return True
+            else:
+                return False
+    except Exception:
+        return False
