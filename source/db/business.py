@@ -1,9 +1,11 @@
+import logging
 import os
 from datetime import datetime
 
 import dotenv
 from db.models import Payment, User
-from sqlalchemy import select
+from sqlalchemy import delete, select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from structures.structures import Answer
 
@@ -12,6 +14,8 @@ DB_URL = os.getenv("DATABASE_URL")
 
 engine = create_async_engine(DB_URL, echo=False)
 async_session = async_sessionmaker(engine, expire_on_commit=True)
+
+logger = logging.getLogger(__name__)
 
 
 async def create_new_user(
@@ -59,8 +63,8 @@ async def save_payments(answer: Answer, tg_id: int) -> bool:
                 )
             await session.commit()
         return True
-    except Exception as e:
-        print(f"Error saving payments: {e}")
+    except SQLAlchemyError as e:
+        logger.exception(f"Error saving payments: {e}")
         return False
 
 
@@ -82,25 +86,19 @@ async def delete_last_payment(tg_id: int) -> bool:
                 return True
             else:
                 return False
-    except Exception as e:
-        print(f"EXCEPTION: {e}")
+    except SQLAlchemyError as e:
+        logger.exception(f"Error deleting last payment: {e}")
         return False
 
 
 async def delete_all_payments(tg_id: int) -> bool:
     try:
         async with async_session() as session:
-            stmt = select(Payment).where(Payment.tg_id == tg_id)
+            stmt = delete(Payment).where(Payment.tg_id == tg_id)
             result = await session.execute(stmt)
-            payments_to_delete = result.scalars().all()
+            await session.commit()
+            return result.rowcount > 0
 
-            if payments_to_delete:
-                for payment in payments_to_delete:
-                    await session.delete(payment)
-                await session.commit()
-                return True
-            else:
-                return False
-    except Exception as e:
-        print(e)
+    except SQLAlchemyError as e:
+        logger.exception(f"Error deleting all payments: {e}")
         return False
