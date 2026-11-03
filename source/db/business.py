@@ -2,9 +2,9 @@ import os
 from datetime import datetime
 
 import dotenv
-from db.models import User
+from db.models import Payment, User
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 dotenv.load_dotenv()
 DB_URL = os.getenv("DATABASE_URL")
@@ -35,7 +35,19 @@ async def create_new_user(
         return new_user
 
 
-async def get_user(telegram_id: int, session: AsyncSession) -> User | None:
-    stmt = select(User).where(User.telegram_id == telegram_id)
-    result = await session.execute(stmt)
-    return result.scalar_one_or_none()
+async def get_user(telegram_id: int) -> User | None:
+    async with async_session() as session:
+        stmt = select(User).where(User.telegram_id == telegram_id)
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
+
+
+async def save_payments(payments: list[Payment]) -> bool:
+    try:
+        async with async_session() as session:
+            for payment in payments:
+                session.add(payment)
+        await session.commit()
+        return True
+    except Exception:
+        return False

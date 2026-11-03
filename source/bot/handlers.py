@@ -2,12 +2,16 @@ import io
 
 from aiogram import Bot, F, Router
 from aiogram.filters import Command, CommandStart, ExceptionTypeFilter
-from aiogram.types import ErrorEvent, Message
+from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery, ErrorEvent, Message
 from bot import logic
+from bot.states import PaymentState
 from business.business import photo_response, text_response, voice_response
 from db.business import create_new_user
 from google.genai.errors import ServerError
 from texts import abc
+
+from source.bot.keyboards import get_confirm_kb
 
 router = Router()
 
@@ -35,10 +39,45 @@ async def cmd_help(message: Message):
 
 
 @router.message(F.text)
-async def text_handler(message: Message):
+async def text_handler(message: Message, state: FSMContext):
     answer = await text_response(message.text)
     answer_text = logic.answer_to_text(answer)
-    await message.answer(text=answer_text, parse_mode="HTML")
+
+    await state.set_data({"payments": answer.model_dump(), "answer_text": answer_text})
+    await state.set_state(PaymentState.confirm_payment)
+
+    text_preview = f"📝 <b>Проверьте данные:</b>\n\n{answer_text}"
+    await message.answer(text_preview, reply_markup=get_confirm_kb(), parse_mode="HTML")
+
+
+@router.callback_query(PaymentState.confirm_payment, F.data == "confirm_payment")
+async def confirm_payment_handler(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    payments = data.get("payments")
+    answer_text = data.get("answer_text")
+
+    if not payments:
+        await callback.message.edit_text(
+            "⚠️ Данные устарели. Отправьте сообщение заново."
+        )
+        await state.clear()
+        return
+
+    # await save_payments([payments])
+
+    await state.clear()
+
+    await callback.message.edit_text(
+        f"✅ Расход успешно записан в базу данных!\n\n{answer_text}", parse_mode="HTML"
+    )
+    await callback.answer()
+
+
+@router.callback_query(PaymentState.confirm_payment, F.data == "cancel_payment")
+async def cancel_payment_handler(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.message.edit_text("❌ Запись отменена.")
+    await callback.answer()
 
 
 @router.message(F.voice)
