@@ -1,7 +1,8 @@
 aiogram
-google.genai
-datetime
-dotenv
-google
-sqlalchemy
+google-genai
 pydantic
+sqlalchemy
+alembic
+asyncpg
+python-dotenv
+greenlet
