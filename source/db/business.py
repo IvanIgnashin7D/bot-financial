@@ -1,16 +1,18 @@
 import logging
+import math
 import os
 from datetime import datetime
 
 import dotenv
 from db.models import Payment, User
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from structures.structures import Answer
 
 dotenv.load_dotenv()
 DB_URL = os.getenv("DATABASE_URL")
+PAGE_SIZE = 5
 
 engine = create_async_engine(DB_URL, echo=False)
 async_session = async_sessionmaker(engine, expire_on_commit=True)
@@ -102,3 +104,37 @@ async def delete_all_payments(tg_id: int) -> bool:
     except SQLAlchemyError as e:
         logger.exception(f"Error deleting all payments: {e}")
         return False
+
+
+async def get_payments_by_period(
+    tg_id: int,
+    start_date: datetime,
+    end_date: datetime,
+    page: int = 1,
+    page_size: int = PAGE_SIZE,
+) -> tuple[list[Payment], int]:
+    async with async_session() as session:
+        count_stmt = select(func.count(Payment.id)).where(
+            Payment.tg_id == tg_id,
+            Payment.date >= start_date,
+            Payment.date <= end_date,
+        )
+        total_count = (await session.execute(count_stmt)).scalar() or 0
+        total_pages = math.ceil(total_count / page_size) or 1
+
+        offset = (page - 1) * page_size
+        stmt = (
+            select(Payment)
+            .where(
+                Payment.tg_id == tg_id,
+                Payment.date >= start_date,
+                Payment.date <= end_date,
+            )
+            .order_by(Payment.date.desc(), Payment.id.desc())
+            .offset(offset)
+            .limit(page_size)
+        )
+        result = await session.execute(stmt)
+        payments = list(result.scalars().all())
+
+        return payments, total_pages

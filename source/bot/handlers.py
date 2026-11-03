@@ -1,13 +1,24 @@
 import io
+from datetime import datetime, timedelta
 
 from aiogram import Bot, F, Router
 from aiogram.filters import Command, CommandStart, ExceptionTypeFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, ErrorEvent, Message
-from bot import logic
-from bot.keyboards import get_confirm_kb
+from bot.keyboards import (
+    PaymentsPaginationCallback,
+    get_confirm_kb,
+    get_pagination_kb,
+    get_stats_kb,
+)
+from bot.logic import answer_to_text, payments_to_text
 from bot.states import ClearPaymentsState, PaymentState
-from business.business import photo_response, text_response, voice_response
+from business.business import (
+    get_payments_by_period,
+    photo_response,
+    text_response,
+    voice_response,
+)
 from db.business import (
     create_new_user,
     delete_all_payments,
@@ -45,9 +56,70 @@ async def cmd_help(message: Message):
 @router.message(Command("stats"))
 async def stats_handler(message: Message):
     await message.answer(
-        "ℹ️ Функция статистики пока в разработке. Пожалуйста, подождите."
+        "ℹ️ Функция статистики пока в разработке. Пожалуйста, подождите.",
+        reply_markup=get_stats_kb(),
     )
-    # TODO: dodelat
+
+
+@router.callback_query(F.data == "stats_day")
+async def stats_day_handler(callback: CallbackQuery):
+    end_date = datetime.now()
+    start_date = end_date - timedelta(hours=24)
+
+    payments, total_pages = await get_payments_by_period(
+        tg_id=callback.from_user.id, start_date=start_date, end_date=end_date
+    )
+
+    text = payments_to_text(payments)
+
+    await callback.message.edit_text(
+        text,
+        reply_markup=get_pagination_kb(page=1, total_pages=total_pages),
+        parse_mode="HTML",
+    )
+    # todo
+    await callback.answer()
+
+
+@router.callback_query(F.data == "stats_week")
+async def stats_week_handler(callback: CallbackQuery):
+    await callback.message.edit_text(
+        "ℹ️ Статистика за неделю пока в разработке. Пожалуйста, подождите.",
+        reply_markup=get_pagination_kb(page=1, total_pages=1),
+    )
+    # todo
+
+    await callback.answer()
+
+
+@router.callback_query(F.data == "stats_month")
+async def stats_month_handler(callback: CallbackQuery):
+    await callback.message.edit_text(
+        "ℹ️ Статистика за месяц пока в разработке. Пожалуйста, подождите.",
+        reply_markup=get_pagination_kb(page=1, total_pages=1),
+    )
+    # todo
+    await callback.answer()
+
+
+@router.callback_query(F.data == "stats_all")
+async def stats_all_handler(callback: CallbackQuery):
+    await callback.message.edit_text(
+        "ℹ️ Общая статистика трат пока в разработке. Пожалуйста, подождите.",
+        reply_markup=get_pagination_kb(page=1, total_pages=1),
+    )
+    # todo:
+    await callback.answer()
+
+
+@router.callback_query(PaymentsPaginationCallback.filter())
+def pagination_handler(
+    callback: CallbackQuery, callback_data: PaymentsPaginationCallback
+):
+    pass
+
+
+# todo
 
 
 @router.message(Command("delete_last_payment"))
@@ -102,7 +174,7 @@ async def text_handler(message: Message, state: FSMContext):
     current_message = await message.answer("⏳ Обрабатываю ваш запрос...")
 
     answer = await text_response(message.text)
-    answer_text = logic.answer_to_text(answer)
+    answer_text = answer_to_text(answer)
 
     await state.set_data({"payments": answer, "answer_text": answer_text})
     await state.set_state(PaymentState.confirm_payment)
@@ -159,7 +231,7 @@ async def voice_handler(message: Message, bot: Bot):
     await bot.download(message.voice, file_buffer)
 
     answer = await voice_response(file_buffer)
-    answer_text = logic.answer_to_text(answer)
+    answer_text = answer_to_text(answer)
     await message.answer(text=answer_text, parse_mode="HTML")
 
 
@@ -169,5 +241,5 @@ async def photo_handler(message: Message, bot: Bot):
     await bot.download(message.photo[-1], file_buffer)
 
     answer = await photo_response(file_buffer)
-    answer_text = logic.answer_to_text(answer)
+    answer_text = answer_to_text(answer)
     await message.answer(text=answer_text, parse_mode="HTML")
