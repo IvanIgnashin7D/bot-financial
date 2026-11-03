@@ -22,7 +22,7 @@ down:
 build:
 	docker compose up --build -d
 
-restart: down up
+restart: down build
 
 # Просмотр логов
 logs:

@@ -2,10 +2,9 @@ import os
 from datetime import datetime
 
 import dotenv
+from db.models import User
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
-from source.db.models import User
 
 dotenv.load_dotenv()
 DB_URL = os.getenv("DATABASE_URL")
