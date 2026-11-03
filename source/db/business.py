@@ -19,7 +19,7 @@ async def create_new_user(
 ) -> User | None:
 
     async with async_session() as session:
-        existing_user = await get_user(telegram_id=telegram_id, session=session)
+        existing_user = await get_user(telegram_id=telegram_id)
         if existing_user:
             return None  # User already exists, return None or handle as needed
 
@@ -49,5 +49,26 @@ async def save_payments(payments: list[Payment]) -> bool:
                 session.add(payment)
         await session.commit()
         return True
+    except Exception:
+        return False
+
+
+async def delete_last_payment(telegram_id: int) -> bool:
+    try:
+        async with async_session() as session:
+            stmt = (
+                select(Payment)
+                .where(Payment.telegram_id == telegram_id)
+                .order_by(Payment.created_at.desc())
+            )
+            result = await session.execute(stmt)
+            last_payment = result.scalars().first()
+
+            if last_payment:
+                await session.delete(last_payment)
+                await session.commit()
+                return True
+            else:
+                return False
     except Exception:
         return False
