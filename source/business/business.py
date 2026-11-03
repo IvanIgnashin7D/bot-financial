@@ -32,9 +32,10 @@ def get_system_prompt() -> str:
 @retry_on_server_error()
 async def text_response(text: str) -> Answer:
     if USE_MOCK:
+        print("Using mock response for text_response")
         # Mock response for testing
         return Answer(
-            сontent=[
+            content=[
                 Trata(
                     name="Тестовая трата",
                     amount=100.0,

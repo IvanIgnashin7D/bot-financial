@@ -27,7 +27,7 @@ class Payment(Base):
     __tablename__ = "payments"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(
+    tg_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("users.telegram_id", ondelete="CASCADE")
     )
     name: Mapped[str] = mapped_column(String(255))
@@ -38,4 +38,4 @@ class Payment(Base):
 
     user: Mapped["User"] = relationship(back_populates="payments")
 
-    __table_args__ = (Index("idx_payments_user_date", "user_id", "date"),)
+    __table_args__ = (Index("idx_payments_user_date", "tg_id", "date"),)

@@ -5,7 +5,7 @@ import dotenv
 from db.models import Payment, User
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-from structures.structures import Trata
+from structures.structures import Answer
 
 dotenv.load_dotenv()
 DB_URL = os.getenv("DATABASE_URL")
@@ -43,12 +43,13 @@ async def get_user(telegram_id: int) -> User | None:
         return result.scalar_one_or_none()
 
 
-async def save_payments(tratas: list[Trata]) -> bool:
+async def save_payments(answer: Answer, tg_id: int) -> bool:
     try:
         async with async_session() as session:
-            for trata in tratas:
+            for trata in answer.content:
                 session.add(
                     Payment(
+                        tg_id=tg_id,
                         name=trata.name,
                         amount=trata.amount,
                         category=trata.category,
@@ -58,35 +59,39 @@ async def save_payments(tratas: list[Trata]) -> bool:
                 )
         await session.commit()
         return True
-    except Exception:
+    except Exception as e:
+        print(f"Error saving payments: {e}")
         return False
 
 
-async def delete_last_payment(telegram_id: int) -> bool:
+async def delete_last_payment(tg_id: int) -> bool:
     try:
         async with async_session() as session:
             stmt = (
                 select(Payment)
-                .where(Payment.telegram_id == telegram_id)
-                .order_by(Payment.created_at.desc())
+                .where(Payment.tg_id == tg_id)
+                .order_by(Payment.date.desc())
             )
             result = await session.execute(stmt)
             last_payment = result.scalars().first()
 
             if last_payment:
+                print("FOUND")
                 await session.delete(last_payment)
                 await session.commit()
                 return True
             else:
+                print("NOT FOUND")
                 return False
-    except Exception:
+    except Exception as e:
+        print(f"EXCEPTION: {e}")
         return False
 
 
-async def delete_all_payments(telegram_id: int) -> bool:
+async def delete_all_payments(tg_id: int) -> bool:
     try:
         async with async_session() as session:
-            stmt = select(Payment).where(Payment.telegram_id == telegram_id)
+            stmt = select(Payment).where(Payment.tg_id == tg_id)
             result = await session.execute(stmt)
             payments_to_delete = result.scalars().all()
 

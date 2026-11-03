@@ -21,6 +21,9 @@ services:
     build: .
     container_name: financial_bot
     restart: always
+    volumes:
+      - ./migrations:/app/migrations
+      - ./source:/app/source
     depends_on:
       postgres:
         condition: service_healthy

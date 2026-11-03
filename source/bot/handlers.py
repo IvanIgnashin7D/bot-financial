@@ -52,7 +52,7 @@ async def stats_handler(message: Message):
 
 @router.message(Command("delete_last_payment"))
 async def delete_last_payment_handler(message: Message):
-    deleted = await delete_last_payment(telegram_id=message.from_user.id)
+    deleted = await delete_last_payment(tg_id=message.from_user.id)
     if deleted:
         await message.answer("✅ Последняя трата успешно удалена.")
     else:
@@ -88,12 +88,11 @@ async def cancel_clear_handler(callback: CallbackQuery, state: FSMContext):
 
 
 @router.error(ExceptionTypeFilter(ServerError))
-async def handle_gemini_server_error(event: ErrorEvent, retries=3):
+async def handle_gemini_server_error(event: ErrorEvent):
     if event.update.message:
-        for _ in range(retries):
-            await event.update.message.answer(
-                "⚠️ Нейросеть сейчас перегружена запросами. Повторная попытка..."
-            )
+        await event.update.message.answer(
+            "⚠️ Нейросеть сейчас перегружена запросами. Повторная попытка..."
+        )
 
 
 @router.message(F.text)
@@ -103,7 +102,7 @@ async def text_handler(message: Message, state: FSMContext):
     answer = await text_response(message.text)
     answer_text = logic.answer_to_text(answer)
 
-    await state.set_data({"payments": answer.model_dump(), "answer_text": answer_text})
+    await state.set_data({"payments": answer, "answer_text": answer_text})
     await state.set_state(PaymentState.confirm_payment)
 
     text_preview = f"📝 <b>Проверьте данные:</b>\n\n{answer_text}"
@@ -125,7 +124,8 @@ async def confirm_payment_handler(callback: CallbackQuery, state: FSMContext):
         await state.clear()
         return
 
-    await save_payments(answer)
+    result = await save_payments(answer=answer, tg_id=callback.from_user.id)
+    print(result)
 
     await state.clear()
 
