@@ -1,0 +1,7 @@
+aiogram
+google.genai
+datetime
+dotenv
+google
+sqlalchemy
+pydantic
