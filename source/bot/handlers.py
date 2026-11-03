@@ -115,17 +115,17 @@ async def text_handler(message: Message, state: FSMContext):
 @router.callback_query(PaymentState.confirm_payment, F.data == "confirm_payment")
 async def confirm_payment_handler(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    payments = data.get("payments")
+    answer = data.get("payments")
     answer_text = data.get("answer_text")
 
-    if not payments:
+    if not answer:
         await callback.message.edit_text(
             "⚠️ Данные устарели. Отправьте сообщение заново."
         )
         await state.clear()
         return
 
-    await save_payments([payments])
+    await save_payments(answer)
 
     await state.clear()
 
