@@ -1,9 +1,9 @@
 from aiogram.filters.callback_data import CallbackData
 from aiogram.types import (
-    InlineKeyboardBuilder,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
 )
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
 def get_confirm_kb(callback_data1=str, callback_data2=str) -> InlineKeyboardMarkup:

@@ -14,7 +14,6 @@ from bot.keyboards import (
 from bot.logic import answer_to_text, payments_to_text
 from bot.states import ClearPaymentsState, PaymentState
 from business.business import (
-    get_payments_by_period,
     photo_response,
     text_response,
     voice_response,
@@ -23,6 +22,7 @@ from db.business import (
     create_new_user,
     delete_all_payments,
     delete_last_payment,
+    get_payments_by_period,
     save_payments,
 )
 from google.genai.errors import ServerError
